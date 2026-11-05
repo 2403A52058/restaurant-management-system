@@ -1,0 +1,20 @@
+{
+  "name": "telangana-ruchulu-rms",
+  "version": "1.0.0",
+  "description": "Telangana Ruchulu - Restaurant Management & POS System",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "single": "node scripts/dev.js",
+    "start": "node backend/src/server.js",
+    "start:prod": "node backend/src/server.js",
+    "start:local": "node scripts/dev.js",
+    "start:windows": "start.bat",
+    "build": "node scripts/build.js",
+    "stop": "scripts\\stop-all.bat",
+    "mysql": "scripts\\start-mysql.bat",
+    "backend": "scripts\\start-backend.bat",
+    "frontend": "scripts\\start-frontend.bat",
+    "start:hidden": "wscript.exe scripts\\start-hidden.vbs",
+    "seed": "cd backend && node prisma/seed.js"
+  }
+}

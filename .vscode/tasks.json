@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "▶ Run Total Code in Single Terminal (MySQL + Backend + Frontend)",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\dev.bat"],
+      "problemMatcher": [],
+      "presentation": {
+        "panel": "shared",
+        "focus": true,
+        "reveal": "always"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "1. Start MySQL Database",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\scripts\\start-mysql.bat"],
+      "problemMatcher": [],
+      "presentation": {
+        "group": "split-tabs",
+        "panel": "new",
+        "focus": false,
+        "reveal": "always"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "2. Start Express Backend",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\scripts\\start-backend.bat"],
+      "problemMatcher": [],
+      "presentation": {
+        "group": "split-tabs",
+        "panel": "new",
+        "focus": false,
+        "reveal": "always"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "3. Start React Frontend",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\scripts\\start-frontend.bat"],
+      "problemMatcher": [],
+      "presentation": {
+        "group": "split-tabs",
+        "panel": "new",
+        "focus": false,
+        "reveal": "always"
+      },
+      "isBackground": true
+    }
+  ]
+}

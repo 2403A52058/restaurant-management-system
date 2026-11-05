@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Express Backend",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/backend/src/server.js",
+      "env": {
+        "PORT": "5000",
+        "NODE_ENV": "development"
+      },
+      "runtimeExecutable": "C:/Users/koush/AppData/Local/Programs/nodejs/node.exe",
+      "cwd": "${workspaceFolder}/backend"
+    }
+  ]
+}
