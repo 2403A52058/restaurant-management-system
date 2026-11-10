@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: telangana-ruchulu
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: telangana_super_secret_jwt_key_2026
+      - key: DATABASE_URL
+        sync: false
