@@ -9,13 +9,13 @@ console.log('====================================================\n');
 
 try {
   console.log('[1/2] Installing backend dependencies & generating Prisma Client...');
-  execSync('npm install && npx prisma generate', {
+  execSync('npm install --include=dev && npx prisma generate', {
     cwd: path.join(root, 'backend'),
     stdio: 'inherit'
   });
 
   console.log('\n[2/2] Installing frontend dependencies & building React production bundle...');
-  execSync('npm install && npm run build', {
+  execSync('npm install --include=dev && npm run build', {
     cwd: path.join(root, 'frontend'),
     stdio: 'inherit'
   });
