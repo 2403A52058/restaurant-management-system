@@ -85,7 +85,7 @@ export default function Navbar({ setMobileOpen, pageTitle }) {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-xs font-semibold text-cream-100 leading-tight">
-                {user?.employee ? `${user.employee.firstName}` : user?.username}
+                {user?.employee ? `${user.employee.firstName} ${user.employee.lastName}` : (user?.username || 'Koushik Rao')}
               </p>
               <p className="text-[10px] text-brand-gold font-medium uppercase tracking-wider">
                 {user?.role}

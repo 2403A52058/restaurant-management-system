@@ -64,7 +64,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
               {settings.restaurantName || 'Telangana Ruchulu'}
             </h1>
             <p className="text-[11px] font-medium text-cream-400/70 tracking-wider uppercase">
-              Royal Military Kitchen OS
+              Kakatiya Military Kitchen
             </p>
           </div>
         </div>
