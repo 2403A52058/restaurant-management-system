@@ -1,0 +1,15 @@
+# Cloudflare Pages — Security Headers
+# Applied to all routes served from Cloudflare Pages (frontend only).
+# Backend (Render.com) applies its own security headers via Helmet.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(self)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: res.cloudinary.com; connect-src 'self' https://kodikart-api.onrender.com; frame-ancestors 'none';
+
+# API responses should never be cached by browser or intermediaries
+/api/*
+  Cache-Control: no-store, no-cache, must-revalidate

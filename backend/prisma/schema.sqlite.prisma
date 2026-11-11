@@ -1,0 +1,388 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("SQLITE_DATABASE_URL")
+}
+
+// 1. Users Table (Customer, Farm Owner, Super Admin)
+model User {
+  id             Int       @id @default(autoincrement())
+  phone          String    @unique
+  name           String
+  email          String?   @unique
+  role           String    @default("CUSTOMER") // CUSTOMER, FARM_OWNER, ADMIN
+  status         String    @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  otpHash        String?   @map("otp_hash")
+  otpExpiry      DateTime? @map("otp_expiry")
+  otpAttempts    Int       @default(0) @map("otp_attempts")
+  otpLastSentAt  DateTime? @map("otp_last_sent_at")
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  farms          Farm[]    @relation("OwnerFarms")
+  customerBookings Booking[] @relation("CustomerBookings")
+  reviews        Review[]
+  complaints     Complaint[]
+  notifications  Notification[]
+  auditLogs      SecurityAuditLog[]
+
+  @@map("users")
+}
+
+// 2. Farms Table
+model Farm {
+  id                 Int         @id @default(autoincrement())
+  ownerId            Int         @map("owner_id")
+  farmName           String      @map("farm_name")
+  slug               String      @unique
+  description        String?
+  phone              String
+  whatsapp           String?
+  address            String
+  villageOrTown      String      @map("village_or_town")
+  district           String
+  state              String      @default("Telangana")
+  latitude           Float       @default(17.3850)
+  longitude          Float       @default(78.4867)
+  coverImage         String?     @map("cover_image")
+  galleryImages      String?     @map("gallery_images")
+  isVerified         Boolean     @default(false) @map("is_verified")
+  verificationBadge  String      @default("Unverified Farm") @map("verification_badge")
+  isActive           Boolean     @default(true) @map("is_active")
+  suspendedAt        DateTime?   @map("suspended_at")
+  suspensionReason   String?     @map("suspension_reason")
+  rating             Float       @default(5.0)
+  totalReviews       Int         @default(0) @map("total_reviews")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  owner              User        @relation("OwnerFarms", fields: [ownerId], references: [id], onDelete: Restrict)
+  farmBreeds         FarmBreed[]
+  henInventory       HenInventory[]
+  bookings           Booking[]
+  earningsLedger     FarmEarningsLedger[]
+  withdrawals        WithdrawalRequest[]
+  reviews            Review[]
+  complaints         Complaint[]
+
+  @@index([ownerId])
+  @@index([isVerified])
+  @@index([district])
+  @@map("farms")
+}
+
+// 3. Breeds Master Table
+model Breed {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  teluguName  String?     @map("telugu_name")
+  description String?
+  imageUrl    String?     @map("image_url")
+  isStandard  Boolean     @default(true) @map("is_standard")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  farmBreeds  FarmBreed[]
+  hens        HenInventory[]
+  bookings    Booking[]
+
+  @@map("breeds")
+}
+
+// 4. Farm-Specific Breeds & Seasonal Pricing
+model FarmBreed {
+  id              Int         @id @default(autoincrement())
+  farmId          Int         @map("farm_id")
+  breedId         Int         @map("breed_id")
+  customBreedName String?     @map("custom_breed_name")
+  pricePerKg      Decimal     @map("price_per_kg")
+  description     String?
+  photos          String?
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  farm            Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  breed           Breed       @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  priceHistory    BreedPriceHistory[]
+  hens            HenInventory[]
+
+  @@unique([farmId, breedId])
+  @@index([farmId])
+  @@index([breedId])
+  @@map("farm_breeds")
+}
+
+// 5. Breed Seasonal Price History
+model BreedPriceHistory {
+  id          Int       @id @default(autoincrement())
+  farmBreedId Int       @map("farm_breed_id")
+  oldPrice    Decimal   @map("old_price")
+  newPrice    Decimal   @map("new_price")
+  changedBy   Int?      @map("changed_by")
+  reason      String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  farmBreed   FarmBreed @relation(fields: [farmBreedId], references: [id], onDelete: Cascade)
+
+  @@index([farmBreedId])
+  @@map("breed_price_history")
+}
+
+// 6. Individual Hen Inventory
+model HenInventory {
+  id            Int            @id @default(autoincrement())
+  henId         String         @unique @map("hen_id")
+  farmId        Int            @map("farm_id")
+  breedId       Int            @map("breed_id")
+  farmBreedId   Int            @map("farm_breed_id")
+  gender        String         @default("FEMALE")
+  actualWeight  Decimal        @map("actual_weight")
+  pricePerKg    Decimal        @map("price_per_kg")
+  photoUrl      String?        @map("photo_url")
+  photos        String?
+  status        String         @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD
+  notes         String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  farm          Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  breed         Breed          @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  farmBreed     FarmBreed      @relation(fields: [farmBreedId], references: [id], onDelete: Cascade)
+  bookingItems  BookingHenItem[]
+
+  @@index([farmId])
+  @@index([breedId])
+  @@index([status])
+  @@map("hen_inventory")
+}
+
+// 7. Booking & Quotation Master
+model Booking {
+  id                       Int           @id @default(autoincrement())
+  bookingNumber            String        @unique @map("booking_number")
+  customerId               Int           @map("customer_id")
+  farmId                   Int           @map("farm_id")
+  breedId                  Int           @map("breed_id")
+  requestedQuantity        Int           @map("requested_quantity")
+  desiredWeightKg          Decimal       @map("desired_weight_kg")
+  deliveryType             String        @default("PICKUP") @map("delivery_type") // PICKUP, DELIVERY
+  deliveryAddress          String?       @map("delivery_address")
+  deliveryLatitude         Float?        @map("delivery_latitude")
+  deliveryLongitude        Float?        @map("delivery_longitude")
+  deliveryDistanceKm       Decimal       @default(0) @map("delivery_distance_km")
+  deliveryFee              Decimal       @default(0) @map("delivery_fee")
+  totalHenWeightKg         Decimal       @default(0) @map("total_hen_weight_kg")
+  farmBaseAmount           Decimal       @default(0) @map("farm_base_amount")
+  commissionRate           Decimal       @default(0.03) @map("commission_rate")
+  platformCommissionAmount Decimal       @default(0) @map("platform_commission_amount")
+  customerHenAmount        Decimal       @default(0) @map("customer_hen_amount")
+  finalTotalAmount         Decimal       @default(0) @map("final_total_amount")
+  advancePercentage        Decimal       @default(0.20) @map("advance_percentage")
+  advanceAmount            Decimal       @default(0) @map("advance_amount")
+  advancePaid              Boolean       @default(false) @map("advance_paid")
+  remainingAmount          Decimal       @default(0) @map("remaining_amount")
+  remainingPaid            Boolean       @default(false) @map("remaining_paid")
+  isNoAdvanceAllowed       Boolean       @default(false) @map("is_no_advance_allowed")
+  status                   String        @default("REQUESTED") // REQUESTED, QUOTED, QUOTE_ACCEPTED, QUOTE_REJECTED, CONFIRMED, READY_FOR_HANDOVER, COMPLETED, CANCELLED
+  quotationNotes           String?       @map("quotation_notes")
+  quotationCreatedAt       DateTime?     @map("quotation_created_at")
+  quotationExpiresAt       DateTime?     @map("quotation_expires_at")
+  handoverOtpHash          String?       @map("handover_otp_hash")
+  handoverOtpExpiresAt     DateTime?     @map("handover_otp_expires_at")
+  handoverOtpAttempts      Int           @default(0) @map("handover_otp_attempts")
+  handoverCompletedAt      DateTime?     @map("handover_completed_at")
+  handoverVerifiedBy       Int?          @map("handover_verified_by")
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+
+  customer                 User          @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Restrict)
+  farm                     Farm          @relation(fields: [farmId], references: [id], onDelete: Restrict)
+  breed                    Breed         @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  assignedHens             BookingHenItem[]
+  payments                 PaymentLedger[]
+  review                   Review?
+  complaint                Complaint?
+
+  @@index([customerId])
+  @@index([farmId])
+  @@index([status])
+  @@map("bookings")
+}
+
+// 8. Booking Assigned Hen Items
+model BookingHenItem {
+  id                Int          @id @default(autoincrement())
+  bookingId         Int          @map("booking_id")
+  henInventoryId    Int          @map("hen_inventory_id")
+  confirmedWeightKg Decimal      @map("confirmed_weight_kg")
+  pricePerKg        Decimal      @map("price_per_kg")
+  itemTotal         Decimal      @map("item_total")
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  booking           Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hen               HenInventory @relation(fields: [henInventoryId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([henInventoryId])
+  @@map("booking_hen_items")
+}
+
+// 9. Payment Ledger
+model PaymentLedger {
+  id                   Int           @id @default(autoincrement())
+  bookingId            Int           @map("booking_id")
+  paymentType          String        @map("payment_type") // ADVANCE, REMAINING, FULL
+  amount               Decimal
+  paymentMethod        String        @default("UPI") @map("payment_method")
+  transactionReference String?       @map("transaction_reference")
+  paymentStatus        String        @default("PENDING") @map("payment_status") // PENDING, SUCCESS, FAILED, REFUNDED
+  gatewayResponse      String?       @map("gateway_response")
+  verifiedAt           DateTime?     @map("verified_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+
+  booking              Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("payment_ledger")
+}
+
+// 10. Farm Earnings Ledger
+model FarmEarningsLedger {
+  id           Int      @id @default(autoincrement())
+  farmId       Int      @map("farm_id")
+  bookingId    Int?     @map("booking_id")
+  entryType    String   @map("entry_type")
+  amount       Decimal
+  balanceAfter Decimal  @map("balance_after")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  farm         Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("farm_earnings_ledger")
+}
+
+// 11. Platform Commission Ledger
+model PlatformCommissionLedger {
+  id             Int      @id @default(autoincrement())
+  bookingId      Int      @map("booking_id")
+  commissionRate Decimal  @map("commission_rate")
+  amount         Decimal
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@map("platform_commission_ledger")
+}
+
+// 12. Farm Owner Withdrawal Requests
+model WithdrawalRequest {
+  id            Int              @id @default(autoincrement())
+  farmId        Int              @map("farm_id")
+  amount        Decimal
+  accountHolder String           @map("account_holder")
+  bankName      String           @map("bank_name")
+  accountNumber String           @map("account_number")
+  ifscCode      String           @map("ifsc_code")
+  upiId         String?          @map("upi_id")
+  status        String           @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED
+  adminNotes    String?          @map("admin_notes")
+  processedAt   DateTime?        @map("processed_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  farm          Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("withdrawal_requests")
+}
+
+// 13. Customer Reviews
+model Review {
+  id         Int      @id @default(autoincrement())
+  bookingId  Int      @unique @map("booking_id")
+  customerId Int      @map("customer_id")
+  farmId     Int      @map("farm_id")
+  rating     Int      @default(5)
+  comment    String?
+  farmReply  String?  @map("farm_reply")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  farm       Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("reviews")
+}
+
+// 14. Customer Complaints
+model Complaint {
+  id              Int             @id @default(autoincrement())
+  bookingId       Int?            @unique @map("booking_id")
+  customerId      Int             @map("customer_id")
+  farmId          Int?            @map("farm_id")
+  subject         String
+  description     String
+  status          String          @default("OPEN") // OPEN, INVESTIGATING, RESOLVED, DISMISSED
+  resolutionNotes String?         @map("resolution_notes")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  booking         Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  customer        User            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  farm            Farm?           @relation(fields: [farmId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([status])
+  @@map("complaints")
+}
+
+// 15. Platform Global Settings
+model PlatformSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+// 16. Security Audit Logs
+model SecurityAuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  details   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@map("security_audit_logs")
+}
+
+// 17. User Notifications
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String
+  message   String
+  type      String   @default("SYSTEM")
+  isRead    Boolean  @default(false) @map("is_read")
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}

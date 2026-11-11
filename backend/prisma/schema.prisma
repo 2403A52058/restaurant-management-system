@@ -3,321 +3,448 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// 1. Roles Table
-model Role {
-  id          Int        @id @default(autoincrement())
-  name        String     @unique @db.VarChar(50)
-  description String?    @db.VarChar(255)
-  permissions String?    @db.Text
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-
-  users       User[]
-  employees   Employee[]
-
-  @@map("roles")
+enum Role {
+  CUSTOMER
+  FARM_OWNER
+  ADMIN
 }
 
-// 2. Users Table
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum HenStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum BookingStatus {
+  REQUESTED
+  QUOTED
+  QUOTE_ACCEPTED
+  QUOTE_REJECTED
+  CONFIRMED
+  READY_FOR_HANDOVER
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryType {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentType {
+  ADVANCE
+  REMAINING
+  FULL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum ComplaintStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+// 1. Users Table (Customer, Farm Owner, Super Admin)
 model User {
-  id           Int       @id @default(autoincrement())
-  roleId       Int       @map("role_id")
-  username     String    @unique @db.VarChar(100)
-  email        String    @unique @db.VarChar(150)
-  passwordHash String    @map("password_hash") @db.VarChar(255)
-  isActive     Boolean   @default(true) @map("is_active")
-  lastLogin    DateTime? @map("last_login")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id             Int          @id @default(autoincrement())
+  phone          String       @unique @db.VarChar(20)
+  name           String       @db.VarChar(120)
+  email          String?      @unique @db.VarChar(150)
+  role           Role         @default(CUSTOMER)
+  status         UserStatus   @default(ACTIVE)
+  otpHash        String?      @map("otp_hash") @db.VarChar(255)
+  otpExpiry      DateTime?    @map("otp_expiry")
+  otpAttempts    Int          @default(0) @map("otp_attempts")
+  otpLastSentAt  DateTime?    @map("otp_last_sent_at")
+  lastLoginAt    DateTime?    @map("last_login_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  role         Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  employee     Employee?
-  invoices     Invoice[]
+  farms          Farm[]       @relation("OwnerFarms")
+  customerBookings Booking[]  @relation("CustomerBookings")
+  reviews        Review[]
+  complaints     Complaint[]
+  notifications  Notification[]
+  auditLogs      SecurityAuditLog[]
 
-  @@index([roleId])
   @@map("users")
 }
 
-// 3. Employees Table
-model Employee {
-  id        Int       @id @default(autoincrement())
-  userId    Int?      @unique @map("user_id")
-  roleId    Int       @map("role_id")
-  firstName String    @map("first_name") @db.VarChar(100)
-  lastName  String    @map("last_name") @db.VarChar(100)
-  email     String    @unique @db.VarChar(150)
-  phone     String    @db.VarChar(20)
-  salary    Decimal   @db.Decimal(10, 2)
-  hireDate  DateTime  @map("hire_date")
-  status    String    @default("ACTIVE") @db.VarChar(30) // ACTIVE, ON_LEAVE, TERMINATED
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+// 2. Farms Table
+model Farm {
+  id                 Int         @id @default(autoincrement())
+  ownerId            Int         @map("owner_id")
+  farmName           String      @map("farm_name") @db.VarChar(150)
+  slug               String      @unique @db.VarChar(180)
+  description        String?     @db.Text
+  phone              String      @db.VarChar(20)
+  whatsapp           String?     @db.VarChar(20)
+  address            String      @db.VarChar(255)
+  villageOrTown      String      @map("village_or_town") @db.VarChar(100)
+  district           String      @db.VarChar(100)
+  state              String      @default("Telangana") @db.VarChar(100)
+  latitude           Float       @default(17.3850)
+  longitude          Float       @default(78.4867)
+  coverImage         String?     @map("cover_image") @db.Text
+  galleryImages      String?     @map("gallery_images") @db.Text // JSON string array
+  isVerified         Boolean     @default(false) @map("is_verified") // Marked Unverified until verified by admin
+  verificationBadge  String      @default("Unverified Farm") @map("verification_badge") @db.VarChar(50)
+  isActive           Boolean     @default(true) @map("is_active")
+  suspendedAt        DateTime?   @map("suspended_at")
+  suspensionReason   String?     @map("suspension_reason") @db.VarChar(255)
+  rating             Float       @default(5.0)
+  totalReviews       Int         @default(0) @map("total_reviews")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
 
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  role      Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  orders    Order[]
+  owner              User        @relation("OwnerFarms", fields: [ownerId], references: [id], onDelete: Restrict)
+  farmBreeds         FarmBreed[]
+  henInventory       HenInventory[]
+  bookings           Booking[]
+  earningsLedger     FarmEarningsLedger[]
+  withdrawals        WithdrawalRequest[]
+  reviews            Review[]
+  complaints         Complaint[]
 
-  @@index([roleId])
-  @@map("employees")
+  @@index([ownerId])
+  @@index([isVerified])
+  @@index([district])
+  @@map("farms")
 }
 
-// 4. Customers Table
-model Customer {
-  id            Int           @id @default(autoincrement())
-  name          String        @db.VarChar(150)
-  email         String?       @db.VarChar(150)
-  phone         String        @db.VarChar(20)
-  address       String?       @db.VarChar(255)
-  loyaltyPoints Int           @default(0) @map("loyalty_points")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+// 3. Breeds Master Table (Live Native Desi Hens only)
+model Breed {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(100)
+  teluguName  String?     @map("telugu_name") @db.VarChar(100)
+  description String?     @db.Text
+  imageUrl    String?     @map("image_url") @db.Text
+  isStandard  Boolean     @default(true) @map("is_standard")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
-  reservations  Reservation[]
-  orders        Order[]
+  farmBreeds  FarmBreed[]
+  hens        HenInventory[]
+  bookings    Booking[]
 
-  @@map("customers")
+  @@map("breeds")
 }
 
-// 5. Categories Table
-model Category {
-  id          Int        @id @default(autoincrement())
-  name        String     @unique @db.VarChar(100)
-  description String?    @db.VarChar(255)
-  imageUrl    String?    @map("image_url") @db.Text
-  isActive    Boolean    @default(true) @map("is_active")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-
-  menuItems   MenuItem[]
-
-  @@map("categories")
-}
-
-// 6. Menu Items Table
-model MenuItem {
+// 4. Farm-Specific Breeds & Seasonal Pricing
+model FarmBreed {
   id              Int         @id @default(autoincrement())
-  categoryId      Int         @map("category_id")
-  name            String      @db.VarChar(150)
+  farmId          Int         @map("farm_id")
+  breedId         Int         @map("breed_id")
+  customBreedName String?     @map("custom_breed_name") @db.VarChar(100)
+  pricePerKg      Decimal     @map("price_per_kg") @db.Decimal(10, 2)
   description     String?     @db.Text
-  price           Decimal     @db.Decimal(10, 2)
-  costPrice       Decimal?    @map("cost_price") @db.Decimal(10, 2)
-  imageUrl        String?     @map("image_url") @db.Text
-  isAvailable     Boolean     @default(true) @map("is_available")
-  preparationTime Int         @default(15) @map("preparation_time") // in minutes
-  isVeg           Boolean     @default(false) @map("is_veg")
+  photos          String?     @db.Text // JSON string array
+  isActive        Boolean     @default(true) @map("is_active")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
-  category        Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  orderItems      OrderItem[]
+  farm            Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  breed           Breed       @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  priceHistory    BreedPriceHistory[]
+  hens            HenInventory[]
 
-  @@index([categoryId])
-  @@map("menu_items")
+  @@unique([farmId, breedId])
+  @@index([farmId])
+  @@index([breedId])
+  @@map("farm_breeds")
 }
 
-// 7. Restaurant Tables Table
-model RestaurantTable {
-  id              Int           @id @default(autoincrement())
-  tableNumber     String        @unique @map("table_number") @db.VarChar(20)
-  seatingCapacity Int           @map("seating_capacity")
-  location        String?       @db.VarChar(100) // Main Hall, Patio, Rooftop, Private Lounge
-  status          String        @default("AVAILABLE") @db.VarChar(30) // AVAILABLE, RESERVED, OCCUPIED
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+// 5. Breed Seasonal Price History
+model BreedPriceHistory {
+  id          Int       @id @default(autoincrement())
+  farmBreedId Int       @map("farm_breed_id")
+  oldPrice    Decimal   @map("old_price") @db.Decimal(10, 2)
+  newPrice    Decimal   @map("new_price") @db.Decimal(10, 2)
+  changedBy   Int?      @map("changed_by")
+  reason      String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at")
 
-  reservations    Reservation[]
-  orders          Order[]
+  farmBreed   FarmBreed @relation(fields: [farmBreedId], references: [id], onDelete: Cascade)
 
-  @@map("restaurant_tables")
+  @@index([farmBreedId])
+  @@map("breed_price_history")
 }
 
-// 8. Reservations Table
-model Reservation {
+// 6. Individual Hen Inventory
+// Strictly female native hens, max weight 2.5 kg enforced in DB and backend
+model HenInventory {
+  id            Int            @id @default(autoincrement())
+  henId         String         @unique @map("hen_id") @db.VarChar(50) // Unique identifier (e.g. HEN-F01-001)
+  farmId        Int            @map("farm_id")
+  breedId       Int            @map("breed_id")
+  farmBreedId   Int            @map("farm_breed_id")
+  gender        String         @default("FEMALE") @db.VarChar(20) // Only female hens allowed
+  actualWeight  Decimal        @map("actual_weight") @db.Decimal(5, 2) // Max 2.50 kg
+  pricePerKg    Decimal        @map("price_per_kg") @db.Decimal(10, 2)
+  photoUrl      String?        @map("photo_url") @db.Text
+  photos        String?        @db.Text // JSON array
+  status        HenStatus      @default(AVAILABLE)
+  notes         String?        @db.VarChar(255)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  farm          Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  breed         Breed          @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  farmBreed     FarmBreed      @relation(fields: [farmBreedId], references: [id], onDelete: Cascade)
+  bookingItems  BookingHenItem[]
+
+  @@index([farmId])
+  @@index([breedId])
+  @@index([status])
+  @@map("hen_inventory")
+}
+
+// 7. Booking & Quotation Master
+model Booking {
+  id                       Int           @id @default(autoincrement())
+  bookingNumber            String        @unique @map("booking_number") @db.VarChar(50)
+  customerId               Int           @map("customer_id")
+  farmId                   Int           @map("farm_id")
+  breedId                  Int           @map("breed_id")
+  requestedQuantity        Int           @map("requested_quantity")
+  desiredWeightKg          Decimal       @map("desired_weight_kg") @db.Decimal(5, 2)
+  deliveryType             DeliveryType  @default(PICKUP) @map("delivery_type")
+  deliveryAddress          String?       @map("delivery_address") @db.Text
+  deliveryLatitude         Float?        @map("delivery_latitude")
+  deliveryLongitude        Float?        @map("delivery_longitude")
+  deliveryDistanceKm       Decimal       @default(0) @map("delivery_distance_km") @db.Decimal(6, 2)
+  deliveryFee              Decimal       @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  totalHenWeightKg         Decimal       @default(0) @map("total_hen_weight_kg") @db.Decimal(6, 2)
+  farmBaseAmount           Decimal       @default(0) @map("farm_base_amount") @db.Decimal(10, 2)
+  commissionRate           Decimal       @default(0.03) @map("commission_rate") @db.Decimal(5, 4) // Snapshot of 3%
+  platformCommissionAmount Decimal       @default(0) @map("platform_commission_amount") @db.Decimal(10, 2)
+  customerHenAmount        Decimal       @default(0) @map("customer_hen_amount") @db.Decimal(10, 2) // farmBaseAmount + commission
+  finalTotalAmount         Decimal       @default(0) @map("final_total_amount") @db.Decimal(10, 2) // customerHenAmount + deliveryFee
+  advancePercentage        Decimal       @default(0.20) @map("advance_percentage") @db.Decimal(5, 2)
+  advanceAmount            Decimal       @default(0) @map("advance_amount") @db.Decimal(10, 2) // 20%
+  advancePaid              Boolean       @default(false) @map("advance_paid")
+  remainingAmount          Decimal       @default(0) @map("remaining_amount") @db.Decimal(10, 2) // 80%
+  remainingPaid            Boolean       @default(false) @map("remaining_paid")
+  isNoAdvanceAllowed       Boolean       @default(false) @map("is_no_advance_allowed") // Farm owner trusted customer flag
+  status                   BookingStatus @default(REQUESTED)
+  quotationNotes           String?       @map("quotation_notes") @db.Text
+  quotationCreatedAt       DateTime?     @map("quotation_created_at")
+  quotationExpiresAt       DateTime?     @map("quotation_expires_at")
+  handoverOtpHash          String?       @map("handover_otp_hash") @db.VarChar(255)
+  handoverOtpExpiresAt     DateTime?     @map("handover_otp_expires_at")
+  handoverOtpAttempts      Int           @default(0) @map("handover_otp_attempts")
+  handoverCompletedAt      DateTime?     @map("handover_completed_at")
+  handoverVerifiedBy       Int?          @map("handover_verified_by")
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+
+  customer                 User          @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Restrict)
+  farm                     Farm          @relation(fields: [farmId], references: [id], onDelete: Restrict)
+  breed                    Breed         @relation(fields: [breedId], references: [id], onDelete: Restrict)
+  assignedHens             BookingHenItem[]
+  payments                 PaymentLedger[]
+  review                   Review?
+  complaint                Complaint?
+
+  @@index([customerId])
+  @@index([farmId])
+  @@index([status])
+  @@map("bookings")
+}
+
+// 8. Booking Assigned Hen Items (Atomic reservation)
+model BookingHenItem {
+  id                Int          @id @default(autoincrement())
+  bookingId         Int          @map("booking_id")
+  henInventoryId    Int          @map("hen_inventory_id")
+  confirmedWeightKg Decimal      @map("confirmed_weight_kg") @db.Decimal(5, 2)
+  pricePerKg        Decimal      @map("price_per_kg") @db.Decimal(10, 2)
+  itemTotal         Decimal      @map("item_total") @db.Decimal(10, 2)
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  booking           Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hen               HenInventory @relation(fields: [henInventoryId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([henInventoryId])
+  @@map("booking_hen_items")
+}
+
+// 9. Payment Ledger
+model PaymentLedger {
+  id                   Int           @id @default(autoincrement())
+  bookingId            Int           @map("booking_id")
+  paymentType          PaymentType   @map("payment_type")
+  amount               Decimal       @db.Decimal(10, 2)
+  paymentMethod        String        @default("UPI") @map("payment_method") @db.VarChar(50)
+  transactionReference String?       @map("transaction_reference") @db.VarChar(100)
+  paymentStatus        PaymentStatus @default(PENDING) @map("payment_status")
+  gatewayResponse      String?       @map("gateway_response") @db.Text
+  verifiedAt           DateTime?     @map("verified_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+
+  booking              Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("payment_ledger")
+}
+
+// 10. Farm Earnings Ledger (Dedicated Farm Owner Ledger - Never Double Deduct Commission)
+model FarmEarningsLedger {
+  id           Int      @id @default(autoincrement())
+  farmId       Int      @map("farm_id")
+  bookingId    Int?     @map("booking_id")
+  entryType    String   @map("entry_type") @db.VarChar(50) // CREDIT_EARNING, DEBIT_WITHDRAWAL, ADJUSTMENT
+  amount       Decimal  @db.Decimal(10, 2)
+  balanceAfter Decimal  @map("balance_after") @db.Decimal(10, 2)
+  notes        String?  @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  farm         Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("farm_earnings_ledger")
+}
+
+// 11. Platform Commission Ledger (Dedicated Platform Owner Ledger)
+model PlatformCommissionLedger {
+  id             Int      @id @default(autoincrement())
+  bookingId      Int      @map("booking_id")
+  commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 4) // e.g. 0.03
+  amount         Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@map("platform_commission_ledger")
+}
+
+// 12. Farm Owner Withdrawal Requests
+model WithdrawalRequest {
+  id            Int              @id @default(autoincrement())
+  farmId        Int              @map("farm_id")
+  amount        Decimal          @db.Decimal(10, 2)
+  accountHolder String           @map("account_holder") @db.VarChar(120)
+  bankName      String           @map("bank_name") @db.VarChar(120)
+  accountNumber String           @map("account_number") @db.VarChar(50)
+  ifscCode      String           @map("ifsc_code") @db.VarChar(30)
+  upiId         String?          @map("upi_id") @db.VarChar(100)
+  status        WithdrawalStatus @default(PENDING)
+  adminNotes    String?          @map("admin_notes") @db.VarChar(255)
+  processedAt   DateTime?        @map("processed_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  farm          Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("withdrawal_requests")
+}
+
+// 13. Customer Reviews
+model Review {
+  id         Int      @id @default(autoincrement())
+  bookingId  Int      @unique @map("booking_id")
+  customerId Int      @map("customer_id")
+  farmId     Int      @map("farm_id")
+  rating     Int      @default(5)
+  comment    String?  @db.Text
+  farmReply  String?  @map("farm_reply") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  farm       Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("reviews")
+}
+
+// 14. Customer Complaints
+model Complaint {
   id              Int             @id @default(autoincrement())
+  bookingId       Int?            @unique @map("booking_id")
   customerId      Int             @map("customer_id")
-  tableId         Int             @map("table_id")
-  reservationDate DateTime        @map("reservation_date")
-  timeSlot        String          @map("time_slot") @db.VarChar(50) // e.g. "19:00 - 21:00"
-  guestCount      Int             @map("guest_count")
-  status          String          @default("PENDING") @db.VarChar(30) // PENDING, CONFIRMED, CANCELLED, COMPLETED
-  specialRequests String?         @map("special_requests") @db.Text
+  farmId          Int?            @map("farm_id")
+  subject         String          @db.VarChar(180)
+  description     String          @db.Text
+  status          ComplaintStatus @default(OPEN)
+  resolutionNotes String?         @map("resolution_notes") @db.Text
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
-  customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  table           RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  booking         Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  customer        User            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  farm            Farm?           @relation(fields: [farmId], references: [id], onDelete: SetNull)
 
   @@index([customerId])
-  @@index([tableId])
-  @@map("reservations")
+  @@index([status])
+  @@map("complaints")
 }
 
-// 9. Orders Table
-model Order {
-  id             Int             @id @default(autoincrement())
-  orderNumber    String          @unique @map("order_number") @db.VarChar(50)
-  tableId        Int?            @map("table_id")
-  customerId     Int?            @map("customer_id")
-  employeeId     Int?            @map("employee_id")
-  orderType      String          @default("DINE_IN") @map("order_type") @db.VarChar(30) // DINE_IN, TAKEAWAY, DELIVERY
-  status         String          @default("PENDING") @db.VarChar(30) // PENDING, PREPARING, READY, SERVED, CANCELLED
-  subtotal       Decimal         @default(0) @db.Decimal(10, 2)
-  taxAmount      Decimal         @default(0) @map("tax_amount") @db.Decimal(10, 2)
-  discountAmount Decimal         @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  totalAmount    Decimal         @default(0) @map("total_amount") @db.Decimal(10, 2)
-  notes          String?         @db.Text
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+// 15. Platform Global Settings
+model PlatformSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(80)
+  value       String   @db.Text
+  description String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  table          RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
-  customer       Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  employee       Employee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  orderItems     OrderItem[]
-  payments       Payment[]
-  invoice        Invoice?
-
-  @@index([tableId])
-  @@index([customerId])
-  @@index([employeeId])
-  @@map("orders")
+  @@map("platform_settings")
 }
 
-// 10. Order Items Table
-model OrderItem {
-  id         Int      @id @default(autoincrement())
-  orderId    Int      @map("order_id")
-  menuItemId Int      @map("menu_item_id")
-  quantity   Int      @default(1)
-  unitPrice  Decimal  @map("unit_price") @db.Decimal(10, 2)
-  subtotal   Decimal  @db.Decimal(10, 2)
-  notes      String?  @db.VarChar(255)
-  status     String   @default("PENDING") @db.VarChar(30) // PENDING, PREPARING, READY, SERVED
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+// 16. Security Audit Logs
+model SecurityAuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String   @db.VarChar(100)
+  ipAddress String?  @map("ip_address") @db.VarChar(50)
+  userAgent String?  @map("user_agent") @db.VarChar(255)
+  details   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
 
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@index([orderId])
-  @@index([menuItemId])
-  @@map("order_items")
+  @@index([userId])
+  @@index([action])
+  @@map("security_audit_logs")
 }
 
-// 11. Payments Table
-model Payment {
-  id            Int      @id @default(autoincrement())
-  orderId       Int      @map("order_id")
-  paymentMethod String   @map("payment_method") @db.VarChar(30) // CASH, CARD, UPI
-  amount        Decimal  @db.Decimal(10, 2)
-  status        String   @default("COMPLETED") @db.VarChar(30) // PENDING, COMPLETED, FAILED, REFUNDED
-  transactionId String?  @map("transaction_id") @db.VarChar(100)
-  paidAt        DateTime @default(now()) @map("paid_at")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+// 17. User Notifications
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String   @db.VarChar(180)
+  message   String   @db.Text
+  type      String   @default("SYSTEM") @db.VarChar(50)
+  isRead    Boolean  @default(false) @map("is_read")
+  link      String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([orderId])
-  @@map("payments")
-}
-
-// 12. Invoices Table
-model Invoice {
-  id             Int      @id @default(autoincrement())
-  invoiceNumber  String   @unique @map("invoice_number") @db.VarChar(50)
-  orderId        Int      @unique @map("order_id")
-  customerName   String?  @map("customer_name") @db.VarChar(150)
-  customerPhone  String?  @map("customer_phone") @db.VarChar(20)
-  subtotal       Decimal  @db.Decimal(10, 2)
-  taxRate        Decimal  @default(5.00) @map("tax_rate") @db.Decimal(5, 2)
-  taxAmount      Decimal  @map("tax_amount") @db.Decimal(10, 2)
-  discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  totalAmount    Decimal  @map("total_amount") @db.Decimal(10, 2)
-  paymentStatus  String   @default("PAID") @map("payment_status") @db.VarChar(30) // PAID, UNPAID, PARTIAL
-  generatedBy    Int?     @map("generated_by") // user_id
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  creator        User?    @relation(fields: [generatedBy], references: [id], onDelete: SetNull)
-
-  @@index([generatedBy])
-  @@map("invoices")
-}
-
-// 13. Ingredients Table
-model Ingredient {
-  id           Int                    @id @default(autoincrement())
-  name         String                 @unique @db.VarChar(100)
-  category     String                 @db.VarChar(50) // Produce, Dairy, Meat, Spices, Bakery, Beverages, Dry Goods
-  currentStock Decimal                @default(0) @map("current_stock") @db.Decimal(10, 2)
-  unit         String                 @db.VarChar(20) // kg, g, l, ml, pcs, packs
-  minThreshold Decimal                @default(5.00) @map("min_threshold") @db.Decimal(10, 2)
-  unitCost     Decimal                @default(0) @map("unit_cost") @db.Decimal(10, 2)
-  createdAt    DateTime               @default(now()) @map("created_at")
-  updatedAt    DateTime               @updatedAt @map("updated_at")
-
-  transactions InventoryTransaction[]
-
-  @@map("ingredients")
-}
-
-// 14. Suppliers Table
-model Supplier {
-  id            Int                    @id @default(autoincrement())
-  name          String                 @db.VarChar(150)
-  contactPerson String?                @map("contact_person") @db.VarChar(100)
-  email         String?                @db.VarChar(150)
-  phone         String                 @db.VarChar(20)
-  address       String?                @db.VarChar(255)
-  suppliedItems String?                @map("supplied_items") @db.VarChar(255)
-  isActive      Boolean                @default(true) @map("is_active")
-  createdAt     DateTime               @default(now()) @map("created_at")
-  updatedAt     DateTime               @updatedAt @map("updated_at")
-
-  transactions  InventoryTransaction[]
-
-  @@map("suppliers")
-}
-
-// 15. Inventory Transactions Table
-model InventoryTransaction {
-  id           Int        @id @default(autoincrement())
-  ingredientId Int        @map("ingredient_id")
-  supplierId   Int?       @map("supplier_id")
-  type         String     @db.VarChar(30) // PURCHASE, USAGE, SPOILAGE, ADJUSTMENT
-  quantity     Decimal    @db.Decimal(10, 2)
-  unitCost     Decimal?   @map("unit_cost") @db.Decimal(10, 2)
-  totalCost    Decimal?   @map("total_cost") @db.Decimal(10, 2)
-  notes        String?    @db.Text
-  createdAt    DateTime   @default(now()) @map("created_at")
-
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  supplier     Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  @@index([ingredientId])
-  @@index([supplierId])
-  @@map("inventory_transactions")
-}
-
-// Settings Table for Restaurant configuration
-model RestaurantSetting {
-  id             Int      @id @default(1)
-  restaurantName String   @default("Le Petit Gourmet") @map("restaurant_name") @db.VarChar(150)
-  tagline        String   @default("Exquisite Dining & Modern Bistro") @db.VarChar(255)
-  address        String   @default("108 Royal Orchid Blvd, Gourmet District") @db.VarChar(255)
-  phone          String   @default("+1 (555) 382-7491") @db.VarChar(30)
-  email          String   @default("contact@lepetitgourmet.com") @db.VarChar(150)
-  currencySymbol String   @default("$") @map("currency_symbol") @db.VarChar(10)
-  currencyCode   String   @default("USD") @map("currency_code") @db.VarChar(10)
-  defaultTaxRate Decimal  @default(5.00) @map("default_tax_rate") @db.Decimal(5, 2)
-  openingHours   String   @default("11:00 AM - 11:00 PM") @map("opening_hours") @db.VarChar(100)
-  invoiceFooter  String   @default("Thank you for dining with us! Please visit again.") @map("invoice_footer") @db.VarChar(255)
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  @@map("restaurant_settings")
+  @@index([userId])
+  @@map("notifications")
 }

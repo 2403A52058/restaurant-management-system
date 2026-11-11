@@ -1,20 +1,11 @@
 {
-  "name": "telangana-ruchulu-rms",
+  "name": "kodikart-marketplace",
   "version": "1.0.0",
-  "description": "Telangana Ruchulu - Restaurant Management & POS System",
+  "description": "KodiKart — Live Native Hens Marketplace (AP & Telangana)",
   "scripts": {
-    "dev": "node scripts/dev.js",
-    "single": "node scripts/dev.js",
     "start": "node backend/src/server.js",
-    "start:prod": "node backend/src/server.js",
-    "start:local": "node scripts/dev.js",
-    "start:windows": "start.bat",
-    "build": "node scripts/build.js",
-    "stop": "scripts\\stop-all.bat",
-    "mysql": "scripts\\start-mysql.bat",
-    "backend": "scripts\\start-backend.bat",
-    "frontend": "scripts\\start-frontend.bat",
-    "start:hidden": "wscript.exe scripts\\start-hidden.vbs",
+    "dev": "cd backend && node src/server.js",
+    "build": "cd frontend && npm run build",
     "seed": "cd backend && node prisma/seed.js"
   }
 }

@@ -1,0 +1,63 @@
+name: Deploy KodiKart
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Node.js ──────────────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # ── Backend ──────────────────────────────────────────────────────────
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Validate backend syntax
+        working-directory: backend
+        run: node --check src/server.js src/app.js
+
+      # ── Frontend ─────────────────────────────────────────────────────────
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.BACKEND_URL || 'https://kodikart-api.onrender.com' }}
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ── Deployment note ────────────────────────────────────────────────────────
+  # Cloudflare Pages: auto-deploys on push to main (connected via GitHub integration)
+  # Render.com:        auto-deploys on push to main (connected via GitHub integration)
+  # This workflow only validates the build — no manual deploy step needed.

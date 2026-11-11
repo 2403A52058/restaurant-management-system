@@ -1,89 +1,73 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(() => localStorage.getItem('kk_token'));
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState({
-    restaurantName: 'Telangana Ruchulu — Kakatiya Kitchen',
-    tagline: 'Authentic Telangana & Hyderabadi Royal Dastarkhwan',
-    currencySymbol: '₹',
-    defaultTaxRate: 5.0,
-  });
 
-  // Load user profile on mount
-  useEffect(() => {
-    const initAuth = async () => {
-      // Load restaurant settings
-      try {
-        const res = await api.get('/settings');
-        if (res.data?.success && res.data?.data) {
-          setSettings(res.data.data);
-        }
-      } catch (err) {
-        console.warn('Could not load settings:', err);
-      }
-
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-        try {
-          const res = await api.get('/auth/me');
-          if (res.data?.success) {
-            setUser(res.data.user);
-          } else {
-            logout();
-          }
-        } catch (error) {
-          console.error('Failed to authenticate token:', error);
-          logout();
-        }
-      }
+  const loadUser = useCallback(async () => {
+    const storedToken = localStorage.getItem('kk_token');
+    if (!storedToken) {
       setLoading(false);
-    };
-
-    initAuth();
+      return;
+    }
+    try {
+      const data = await authAPI.me();
+      setUser(data.user || data);
+    } catch {
+      localStorage.removeItem('kk_token');
+      setToken(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = async (loginId, password) => {
-    const res = await api.post('/auth/login', { login: loginId, password });
-    if (res.data?.success) {
-      const { token: receivedToken, user: receivedUser } = res.data;
-      localStorage.setItem('token', receivedToken);
-      localStorage.setItem('user', JSON.stringify(receivedUser));
-      setToken(receivedToken);
-      setUser(receivedUser);
-      return { success: true, user: receivedUser };
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  const requestOTP = async (phone, email, name, role) => {
+    const data = await authAPI.requestOTP(phone, email, name, role);
+    return data;
+  };
+
+  const verifyOTP = async (phone, email, otp) => {
+    const data = await authAPI.verifyOTP(phone, email, otp);
+    if (data.token) {
+      localStorage.setItem('kk_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
     }
-    return { success: false, message: res.data?.message || 'Login failed' };
+    return data;
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('kk_token');
     setToken(null);
     setUser(null);
   };
 
-  const hasRole = (allowedRoles = []) => {
+  const hasRole = (roles) => {
     if (!user) return false;
-    if (user.role === 'ADMIN') return true;
-    return allowedRoles.includes(user.role);
+    if (Array.isArray(roles)) return roles.includes(user.role);
+    return user.role === roles;
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, hasRole, settings, setSettings }}>
+    <AuthContext.Provider value={{ user, token, loading, requestOTP, verifyOTP, logout, hasRole, loadUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
+
+export default AuthContext;

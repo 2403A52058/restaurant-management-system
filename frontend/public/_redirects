@@ -1,0 +1,3 @@
+# Cloudflare Pages — Proxy /api to backend & SPA client-side routing
+/api/*  https://kodikart-api.onrender.com/api/:splat  200
+/*      /index.html                                   200

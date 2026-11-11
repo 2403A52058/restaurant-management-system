@@ -1,221 +1,231 @@
-# 🍽️ Telangana Ruchulu — Restaurant Management System
-> **Kakatiya Military Kitchen — Authentic Telangana & Hyderabadi Cuisine**
-> **A comprehensive, enterprise-grade Restaurant Operating & Point-of-Sale System engineered for academic evaluation in Software Engineering and System Design.**
+# 🐔 KodiKart — Live Native Hens. Direct from Farms.
 
-Built with **React.js 18 + Vite**, styled with a custom **Dark Charcoal, Warm Cream, Orange & Gold** Tailwind theme, powered by a modular **Node.js + Express.js REST API**, and backed by a normalized **MySQL database managed via Prisma ORM**.
+> **మన నాటి కోళ్లు – మన నమ్మకం**  
+> *Our Native Hens — Our Trust*
 
----
-
-## ⚡ Quick Start: 3 Ways to Run
-
-| Method | Instructions | Best For |
-| :--- | :--- | :--- |
-| **Method 1: VS Code Tasks** | Open folder in VS Code, press **`Ctrl + Shift + B`** | **Teacher Demo / Viva** |
-| **Method 2: One-Click Launcher** | Double-click **`start.bat`** in folder | Quick local launch |
-| **Method 3: Silent Background** | Double-click **`scripts\start-hidden.vbs`** or run `npm run start:hidden` | Background running |
-
-👉 **Full Viva Presentation Script & Evaluator Guide:** See [`docs/VS_CODE_DEMO_GUIDE.md`](file:///c:/Users/koush/Downloads/sesd/docs/VS_CODE_DEMO_GUIDE.md).
+[![Deploy Status](https://img.shields.io/badge/Frontend-Cloudflare%20Pages-orange)](https://kodikart.pages.dev)
+[![Backend](https://img.shields.io/badge/Backend-Render.com-blueviolet)](https://kodikart-api.onrender.com)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
-## 🌟 Key System Capabilities
+## About
 
-- **100% Live MySQL Database Integration:** No mock data. All metrics, menus, tables, orders, invoices, and inventory balances are queried from a normalized 15-table relational database.
-- **Role-Based Access Control (RBAC):** Granular authorization and protected routes for 5 distinct roles: **Admin**, **Manager**, **Chef**, **Waiter**, and **Cashier**.
-- **Real-Time Executive Dashboard:** Live gross revenue, total orders, available tables, low-stock alerts, 7-day daily velocity bars, 6-month monthly trend areas, and categorical revenue share pie charts.
-- **Culinary Menu Catalog:** Full CRUD for categories and dishes with high-definition imagery, pricing, prep times, dietary classifications (Veg/Non-Veg), and one-click availability toggles.
-- **Floor & Table Visualizer:** Dynamic grid covering dining zones (Main Hall, Patio Garden, Rooftop Terrace, VIP Lounge) with automatic occupancy state changes.
-- **Conflict-Free Reservation Engine:** Automated query checks prevent duplicate table allocations on identical dates and time windows.
-- **Multi-Item Order Processing:** Dine-in, Takeaway, and Delivery orders with line item quantities, custom chef cooking notes, and automated tax calculations.
-- **Kitchen Display System (KDS):** Purpose-built interface for cooks with elapsed minute ticket aging, ticket color coding, and dish-by-dish readiness completion checkboxes.
-- **POS Invoicing & Multi-Tender Payments:** Generate invoices, apply discounts, calculate 5% tax/GST, record **Cash**, **Card**, or **UPI** settlements, automatically free occupied tables, and format thermal printable bills (`@media print`).
-- **Customer CRM & Dining History:** Guest directory tracking loyalty reward points and complete order/visit audit trails.
-- **Personnel Roster:** Employee records with salaries, hire dates, role assignments, and instant account deactivation.
-- **Raw Inventory & Stock Alerts:** Stock balance progress bars, automatic stock re-computation upon purchase/usage transactions, and automated low-stock warnings.
-- **Business Intelligence & CSV Export:** Top 10 best-seller dish rankings, tender method breakdowns, and instant RFC 4180-compliant CSV sales export.
-- **Dynamic Restaurant Profile Settings:** Update restaurant name, currency symbol, default tax rate, and bill footer notes with direct MySQL persistence.
+**KodiKart** is a multi-vendor marketplace for buying and selling **live native Desi hens** directly from farms in **Telangana & Andhra Pradesh**. Farmers list their hen inventory; customers browse, book, pay a 20% advance online, and collect the hens in person using a secure handover OTP.
+
+No middlemen. No cold storage. Farm-fresh, native breed hens — direct to your doorstep.
 
 ---
 
-## 🛠️ Technology Stack
+## User Roles
 
-| Component | Technology | Description |
-| :--- | :--- | :--- |
-| **Frontend Framework** | **React.js 18 + Vite** | High-performance component-driven Single Page Application |
-| **Styling & Design** | **Tailwind CSS** | Custom Charcoal (`#141418`), Warm Cream (`#fffef9`), Orange (`#ea580c`), Gold (`#eab308`) theme |
-| **Icons & Visuals** | **Lucide React** | Clean, minimalist SVG iconography |
-| **Charts & Analytics**| **Recharts** | Responsive SVG bar, area, and pie visualization components |
-| **Backend Framework** | **Node.js + Express.js** | Modular REST API with centralized error handling |
-| **Database** | **MySQL 10.11 / MariaDB** | Normalized ACID-compliant relational database |
-| **ORM** | **Prisma ORM 5.22** | Type-safe schema migrations, queries, and seed pipelines |
-| **Authentication** | **JWT + bcryptjs** | Stateless Bearer token security with salted password hashing |
+| Role | Description | Login Method |
+|------|-------------|--------------|
+| **Customer** | Browse farms, book & pay for hens | Email OTP |
+| **Farm Owner** | List farm, add hen inventory, manage bookings | Email OTP |
+| **Super Admin** | Verify farms, manage platform settings, view ledgers | Email OTP |
+
+> **No passwords.** Authentication is entirely via 6-digit email OTP (via Resend.com). OTPs are bcrypt-hashed before storage — plaintext is never persisted.
 
 ---
 
-## 🗄️ Database Architecture (15 Tables)
+## Tech Stack
 
-The database schema is fully normalized in Third Normal Form (3NF):
-
-```
-restaurant_db
- ├── roles                   # System permissions & authority levels
- ├── users                   # Authentication credentials, password hashes, and active states
- ├── employees               # Staff roster linked to users & roles with salaries & hire dates
- ├── customers               # Guest directory with contact info & loyalty points
- ├── categories              # Food catalog sections (Appetizers, Mains, Pizzas, Desserts, etc.)
- ├── menu_items              # Dishes with pricing, prep time, image URLs & availability
- ├── restaurant_tables       # Tables across dining zones with capacities & occupancy states
- ├── reservations            # Table bookings with date, slot, guests, and conflict checks
- ├── orders                  # Food order master records with subtotals, taxes, and status
- ├── order_items             # Individual dishes inside orders with quantities & kitchen notes
- ├── payments                # Financial settlements via Cash, Card, or UPI with Txn IDs
- ├── invoices                # Itemized customer bills with tax rate and paid/unpaid status
- ├── ingredients             # Raw pantry items with current stock, units & alert thresholds
- ├── suppliers               # Food vendors with contact representative details
- ├── inventory_transactions  # Audit log of purchases, usages, and automated stock balances
- └── restaurant_settings     # Business name, currency ($), tax rate (5%), hours & receipt footer
-```
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18 + Vite, React Router v6, TailwindCSS |
+| **Backend** | Node.js 20 + Express 4 |
+| **Database** | PostgreSQL 15 + Prisma ORM |
+| **Payments** | PhonePe Business Payment Gateway |
+| **Email** | Resend.com (OTP delivery) |
+| **File Storage** | Cloudinary (hen & farm photos) |
+| **Frontend Hosting** | Cloudflare Pages (Free) |
+| **Backend Hosting** | Render.com (Free) |
+| **Database Hosting** | Supabase Free (500 MB PostgreSQL) |
 
 ---
 
-## 🔑 Quick Demo Credentials
+## Security Features
 
-The system includes pre-seeded accounts for testing each operational role:
-
-| Role | Username | Email | Password | Access Highlights |
-| :--- | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin` | `admin@lepetitgourmet.com` | `admin123` | Full unrestricted access to all 13 modules |
-| **Floor Manager** | `manager_marcus` | `marcus.vance@lepetitgourmet.com` | `manager123` | Dashboard, Menu, Tables, Orders, Billing, Reports |
-| **Head Chef** | `chef_elena` | `elena.rostova@lepetitgourmet.com` | `chef123` | Kitchen Display System, Menu Items, Pantry Inventory |
-| **Server / Waiter** | `waiter_leo` | `leo.morales@lepetitgourmet.com` | `waiter123` | Taking orders, Table seating, Guest reservations |
-| **Cashier** | `cashier_sophia` | `sophia.chen@lepetitgourmet.com` | `cashier123` | POS checkout, Invoices, Payments, Receipts |
-
-> *Tip: The login page includes one-click buttons to instantly fill credentials for any role during evaluation.*
+- **Email OTP authentication** — no passwords, no SMS dependency
+- **Bcrypt OTP hashing** — plaintext OTP never stored in DB
+- **JWT with role-based access control** — CUSTOMER / FARM_OWNER / ADMIN
+- **PhonePe webhook signature verification** — SHA-256 HMAC, prevents fake payment callbacks
+- **Atomic hen reservation** — DB transactions prevent double-booking
+- **Max weight enforcement** — 2.5 kg hard cap enforced at both API and DB constraint levels
+- **Handover OTP** — 6-digit code sent only to customer's email at pickup time
+- **Rate limiting** — OTP requests: 5/15 min; API: 100/15 min; Handover: 3/hour
+- **Security headers** — Helmet, CSP, HSTS, X-Frame-Options: DENY, nosniff
+- **CORS** — strict allowlist (only frontend origin)
+- **Security audit logs** — every OTP request, login, booking and payment is logged with IP + timestamp
 
 ---
 
-## 🚀 Getting Started & Setup
+## Local Development (Quick Start)
 
 ### Prerequisites
-- **Node.js** (v18.x or v20.x+)
-- **MySQL / MariaDB** running locally on port `3306`
+- Node.js 20+
+- PostgreSQL 14+ (local) **or** a Supabase free project
+- Git
 
-### 1. Database Configuration
-Ensure MySQL is running and create the database:
-```sql
-CREATE DATABASE IF NOT EXISTS restaurant_db;
-```
-Verify `backend/.env`:
-```env
-DATABASE_URL="mysql://root:@localhost:3306/restaurant_db"
-PORT=5000
-JWT_SECRET="restaurant_jwt_super_secret_key_2026_academic_project"
-JWT_EXPIRES_IN="7d"
-NODE_ENV="development"
-```
+### Steps
 
-### 2. Backend Setup & Seeding
 ```bash
+# 1. Clone
+git clone https://github.com/YOUR_USERNAME/kodikart.git
+cd kodikart
+
+# 2. Backend setup
 cd backend
+cp .env.example .env          # fill in your values (see .env.example)
 npm install
-npx prisma db push
-npx prisma generate
-node prisma/seed.js
-npm start
-```
-*The backend API will start at `http://localhost:5000`.*
+npx prisma db push            # push schema to your DB
+node prisma/seed.js           # seed breeds, admin user, platform settings
+npm start                     # starts on http://localhost:5000
 
-### 3. Frontend Setup
-In a separate terminal:
-```bash
+# 3. Frontend setup (new terminal)
 cd frontend
+cp .env.example .env.local    # set VITE_API_URL=http://localhost:5000
 npm install
-npm run dev
+npm run dev                   # starts on http://localhost:3000
 ```
-*The Vite frontend dev server will start at `http://localhost:3000`.*
 
-### 4. Direct Automation Launchers (Windows)
-Pre-configured batch scripts are provided in `scripts/`:
-- `scripts/start-mysql.bat`: Launches the local MySQL/MariaDB daemon.
-- `scripts/setup-db.bat`: Syncs Prisma schema, generates client, and seeds sample data.
-- `scripts/run-all.bat`: One-click startup for both Backend and Frontend.
+Open **http://localhost:3000** — login with the seeded admin: `9000000000` / `admin@kodikart.in`
 
 ---
 
-## 📑 Required Pages & Navigation
+## Deployment (₹0)
 
-1. **Login Page (`/login`):** Split-screen luxury entrance with one-click role demo fillers.
-2. **Dashboard (`/`):** Real-time business telemetry cards, sales velocity bars, and recent orders.
-3. **Menu Management (`/menu`):** Catalog grid with category filter tabs, dietary badges, and availability switches.
-4. **Table Management (`/tables`):** Seating layout visualizer with dynamic `AVAILABLE`, `RESERVED`, and `OCCUPIED` states.
-5. **Reservations (`/reservations`):** Guest booking calendar with automated conflict prevention algorithms.
-6. **Orders (`/orders`):** Multi-item food order builder with automatic tax calculation and status lifecycles.
-7. **Kitchen Dashboard (`/kitchen`):** Cook station display (KDS) with elapsed prep timers and dish-by-dish completion checks.
-8. **Billing & POS (`/billing`):** Invoicing desk with Cash, Card, and UPI tender options, plus formatted thermal receipts.
-9. **Customers (`/customers`):** Guest CRM directory with loyalty points and past meal histories.
-10. **Employees (`/employees`):** Staff roster with salary details, hire dates, and account status toggles.
-11. **Inventory (`/inventory`):** Ingredients tracker with stock progress bars, automated restock updates, and low-stock banners.
-12. **Reports (`/reports`):** 14-day daily and 12-month annual sales metrics, best-seller rankings, and CSV export.
-13. **Settings (`/settings`):** Global restaurant branding, localized tax rate (5%), and receipt footer configuration.
+> See **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** for the full step-by-step guide.
+
+| Service | Purpose | Cost |
+|---------|---------|------|
+| Cloudflare Pages | Frontend hosting | ₹0 Free |
+| Render.com | Backend API hosting | ₹0 Free |
+| Supabase | PostgreSQL database | ₹0 Free (500 MB) |
+| Cloudinary | Hen/farm image storage | ₹0 Free (25 credits/mo) |
+| Resend.com | Email OTP delivery | ₹0 Free (3000/mo) |
+| PhonePe Business | Payment gateway | ₹0 (transaction %) |
+| GitHub | Source code + CI/CD | ₹0 Free |
+| **Total** | | **₹0/month** |
 
 ---
 
-## 📁 Repository Structure
+## API Endpoints
+
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/request-otp` | Request a 6-digit OTP via email |
+| POST | `/api/auth/verify-otp` | Verify OTP → returns JWT |
+| GET | `/api/auth/me` | Get current user profile (auth required) |
+
+### Farms
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/farms` | List verified farms (public) |
+| GET | `/api/farms/:slug` | Farm detail + inventory (public) |
+| POST | `/api/farms` | Create farm (FARM_OWNER) |
+| PATCH | `/api/farms/:id` | Update farm info (FARM_OWNER) |
+
+### Inventory
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/farms/:farmId/hens` | Add hen to inventory (FARM_OWNER) |
+| GET | `/api/farms/:farmId/hens` | List available hens (public) |
+| PATCH | `/api/hens/:henId` | Update hen (FARM_OWNER) |
+
+### Bookings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/bookings` | Create booking + reserve hens |
+| GET | `/api/bookings/my` | My bookings (CUSTOMER) |
+| GET | `/api/bookings/:id` | Booking detail |
+| POST | `/api/bookings/:id/handover-otp` | Generate handover OTP (FARM_OWNER) |
+| POST | `/api/bookings/:id/complete` | Complete handover with OTP (CUSTOMER) |
+
+### Payments
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/payments/initiate-advance/:bookingId` | Initiate 30% advance via PhonePe |
+| POST | `/api/payments/phonepe-webhook` | PhonePe payment callback (webhook) |
+| GET | `/api/payments/status/:transactionId` | Check payment status |
+
+### Admin
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/dashboard` | Platform stats (ADMIN) |
+| PATCH | `/api/admin/farms/:id/verify` | Verify/unverify a farm (ADMIN) |
+| GET | `/api/admin/settings` | Platform settings (ADMIN) |
+
+---
+
+## Important Limitations (Free Tier)
+
+| Limitation | Detail | Workaround |
+|-----------|--------|-----------|
+| **Render cold start** | Backend sleeps after 15 min inactivity; first request takes ~30s | Use UptimeRobot (free) to ping `/api/health` every 10 min |
+| **Supabase pause** | DB pauses after 7 days no activity | Same UptimeRobot ping keeps it alive |
+| **No SMS OTP** | Email OTP only via Resend.com | Ensure customers use email at registration |
+| **Distance calculation** | Haversine (straight-line km), not actual road distance | Acceptable for initial launch |
+| **Cloudinary uploads** | 25 credits/month free | Optimize images before upload; upgrade if needed |
+| **Resend email** | 3000 emails/month, 100/day | Sufficient for early-stage traffic |
+
+---
+
+## Project Structure
 
 ```
-sesd/
+kodikart/
 ├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma            # 15 normalized tables matching requirements
-│   │   └── seed.js                  # Comprehensive realistic database seed
 │   ├── src/
-│   │   ├── config/db.js             # Prisma client connection
-│   │   ├── middleware/              # JWT auth and error handling
-│   │   ├── controllers/             # 13 REST API controllers
-│   │   ├── routes/                  # Express route definitions
-│   │   ├── app.js                   # Express application setup & static serving
-│   │   └── server.js                # Server entry point
+│   │   ├── app.js                  # Express app setup
+│   │   ├── server.js               # HTTP server entry point
+│   │   ├── controllers/            # Route handlers
+│   │   ├── middleware/             # Auth, rate limiting, validation
+│   │   ├── routes/                 # Express routers
+│   │   └── utils/                 # OTP, email, commission helpers
+│   ├── prisma/
+│   │   ├── schema.prisma           # Database schema (17 tables)
+│   │   └── seed.js                 # Seed data
 │   ├── .env.example
 │   └── package.json
 ├── frontend/
+│   ├── public/
+│   │   ├── _redirects              # Cloudflare Pages SPA routing
+│   │   └── _headers               # Cloudflare Pages security headers
 │   ├── src/
-│   │   ├── components/              # Sidebar, Navbar, StatCard, Modal, PrintBillModal
-│   │   ├── context/                 # AuthContext & Theme state
-│   │   ├── pages/                   # All 13 fully functional pages
-│   │   ├── services/api.js          # Axios client with JWT interceptor
-│   │   ├── App.jsx                  # Protected router mapping
-│   │   └── index.css                # Tailwind styling & print media queries
-│   ├── index.html
-│   ├── tailwind.config.js
-│   ├── vite.config.js
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── main.jsx
 │   └── package.json
-├── docs/
-│   ├── ABSTRACT_AND_OBJECTIVES.md    # Project abstract, problem statement, objectives
-│   ├── SRS_DOCUMENT.md              # Complete Software Requirements Specification
-│   ├── SYSTEM_DESIGN_DIAGRAMS.md    # Mermaid Use Case, ER, DFD, & Architecture diagrams
-│   ├── DATABASE_SCHEMA.sql          # Raw MySQL DDL schema dump
-│   └── TEST_CASES.md                # 20 Academic test cases with verification results
-├── scripts/
-│   ├── start-mysql.bat
-│   ├── setup-db.bat
-│   └── run-all.bat
-└── README.md
+├── .github/
+│   └── workflows/
+│       └── deploy.yml              # GitHub Actions CI/CD
+├── render.yaml                     # Render.com deployment config
+├── .gitignore
+├── README.md
+└── DEPLOYMENT_GUIDE.md
 ```
 
 ---
 
-## 🧪 Verification & Academic Testing
+## Contributing
 
-All 20 test specifications defined in [`docs/TEST_CASES.md`](file:///c:/Users/koush/Downloads/sesd/docs/TEST_CASES.md) have been verified with 100% pass rate:
-- ✅ Password salting and hashing with bcrypt
-- ✅ JWT authentication and role authorization
-- ✅ Conflict detection preventing overlapping table bookings
-- ✅ State machine synchronization between Orders, Tables, and Invoices
-- ✅ Automated ingredient balance adjustments upon purchase and usage
-- ✅ Real-time dashboard aggregations directly from MySQL
-- ✅ Thermal print receipts with `@media print`
-- ✅ RFC 4180 CSV export generation
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add some feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request against `main`
+
+**Never commit** `.env` files, secrets, or database credentials.
 
 ---
 
-*Developed for the Software Engineering and System Design Academic Project.*
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+*Built with ❤️ for farmers and families of Telangana & Andhra Pradesh.*

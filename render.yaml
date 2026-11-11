@@ -1,14 +1,56 @@
 services:
   - type: web
-    name: telangana-ruchulu
+    name: kodikart-api
     runtime: node
     plan: free
-    buildCommand: npm run build
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
     startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+
+      # ── Secrets: set these in Render Dashboard → Environment ─────────────
       - key: JWT_SECRET
-        value: telangana_super_secret_jwt_key_2026
+        sync: false   # generate with: openssl rand -hex 32
+
       - key: DATABASE_URL
-        sync: false
+        sync: false   # Supabase connection string (postgresql://...)
+
+      - key: RESEND_API_KEY
+        sync: false   # from resend.com dashboard
+
+      - key: PHONEPE_MERCHANT_ID
+        sync: false   # from PhonePe Business → Developer Settings
+
+      - key: PHONEPE_SALT_KEY
+        sync: false   # from PhonePe Business → API Credentials
+
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false   # from cloudinary.com dashboard
+
+      - key: CLOUDINARY_API_KEY
+        sync: false   # from cloudinary.com dashboard
+
+      - key: CLOUDINARY_API_SECRET
+        sync: false   # from cloudinary.com dashboard
+
+      # ── Static config values ──────────────────────────────────────────────
+      - key: FROM_EMAIL
+        value: "KodiKart <noreply@kodikart.in>"
+
+      - key: PHONEPE_SALT_INDEX
+        value: "1"
+
+      - key: PHONEPE_ENV
+        value: production
+
+      - key: FRONTEND_URL
+        value: "https://kodikart.pages.dev"
+
+      - key: BACKEND_URL
+        value: "https://kodikart-api.onrender.com"
+
+      - key: PORT
+        value: "5000"

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle in Forest Green -->
+  <circle cx="256" cy="256" r="256" fill="#2d6a4f"/>
+
+  <!-- Hen body — simple stylised silhouette in Harvest Gold -->
+  <!-- Body ellipse -->
+  <ellipse cx="260" cy="300" rx="110" ry="85" fill="#d4a017"/>
+  <!-- Head circle -->
+  <circle cx="360" cy="195" r="55" fill="#d4a017"/>
+  <!-- Beak -->
+  <polygon points="415,185 445,200 415,215" fill="#f4b942"/>
+  <!-- Comb (top of head) -->
+  <path d="M335,145 Q345,115 360,140 Q375,110 385,138 Q400,108 410,135" stroke="#c0392b" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <!-- Eye -->
+  <circle cx="375" cy="190" r="8" fill="#1a1a1a"/>
+  <circle cx="377" cy="188" r="2.5" fill="#ffffff"/>
+  <!-- Wattle -->
+  <ellipse cx="350" cy="235" rx="12" ry="18" fill="#c0392b"/>
+  <!-- Wing detail -->
+  <path d="M165,250 Q200,210 260,230 Q230,280 170,290 Z" fill="#b8860e" opacity="0.6"/>
+  <!-- Tail feathers -->
+  <path d="M155,265 Q100,210 110,170 Q140,210 160,255" fill="#b8860e"/>
+  <path d="M148,280 Q85,245 85,200 Q120,240 152,278" fill="#c99a1a"/>
+  <!-- Legs -->
+  <rect x="225" y="375" width="18" height="55" rx="6" fill="#f4b942"/>
+  <rect x="275" y="375" width="18" height="55" rx="6" fill="#f4b942"/>
+  <!-- Feet -->
+  <path d="M215,428 L195,440 M223,430 L218,448 M233,428 L240,445" stroke="#f4b942" stroke-width="7" stroke-linecap="round"/>
+  <path d="M265,428 L245,440 M273,430 L268,448 M283,428 L290,445" stroke="#f4b942" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- "KK" text wordmark in cream at bottom for small-size legibility -->
+  <text x="256" y="490" font-family="Arial, sans-serif" font-size="36" font-weight="800"
+        text-anchor="middle" fill="#fefae0" letter-spacing="4">KK</text>
+</svg>

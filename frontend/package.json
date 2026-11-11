@@ -1,5 +1,6 @@
 {
-  "name": "restaurant-management-frontend",
+  "name": "kodikart-frontend",
+  "description": "KodiKart — Live Native Hens Marketplace",
   "private": true,
   "version": "1.0.0",
   "type": "module",
